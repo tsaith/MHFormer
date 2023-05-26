@@ -16,6 +16,11 @@ video/
 # Images
 images/
 
+# Outputs
+outputs/
+output/
+
+
 # for redundant files
 *~
 *.pyc
