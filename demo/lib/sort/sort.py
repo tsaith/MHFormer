@@ -12,7 +12,7 @@ import argparse
 from filterpy.kalman import KalmanFilter
 
 
-@jit
+@jit(nopython=True)
 def iou(bb_test, bb_gt):
     """
     Computes IUO between two bboxes in the form [x1,y1,x2,y2]

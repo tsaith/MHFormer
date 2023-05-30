@@ -9,6 +9,7 @@ import torch
 import glob
 from tqdm import tqdm
 import copy
+from IPython import embed
 
 sys.path.append(os.getcwd())
 from model.mhformer import Model
@@ -19,10 +20,65 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.gridspec as gridspec
 
-from skyeye.pose_estimation.mhformer import interpolate_keypoints_2d
-from skyeye.pose_estimation.mhformer import show2Dpose, show3Dpose
-from skyeye.pose_estimation.mhformer import img2video
-from skyeye.utils import Timer
+plt.switch_backend('agg')
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+
+def show2Dpose(kps, img):
+    connections = [[0, 1], [1, 2], [2, 3], [0, 4], [4, 5],
+                   [5, 6], [0, 7], [7, 8], [8, 9], [9, 10],
+                   [8, 11], [11, 12], [12, 13], [8, 14], [14, 15], [15, 16]]
+
+    LR = np.array([0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], dtype=bool)
+
+    lcolor = (255, 0, 0)
+    rcolor = (0, 0, 255)
+    thickness = 3
+
+    for j,c in enumerate(connections):
+        start = map(int, kps[c[0]])
+        end = map(int, kps[c[1]])
+        start = list(start)
+        end = list(end)
+        cv2.line(img, (start[0], start[1]), (end[0], end[1]), lcolor if LR[j] else rcolor, thickness)
+        cv2.circle(img, (start[0], start[1]), thickness=-1, color=(0, 255, 0), radius=3)
+        cv2.circle(img, (end[0], end[1]), thickness=-1, color=(0, 255, 0), radius=3)
+
+    return img
+
+
+def show3Dpose(vals, ax):
+    ax.view_init(elev=15., azim=70)
+
+    lcolor=(0,0,1)
+    rcolor=(1,0,0)
+
+    I = np.array( [0, 0, 1, 4, 2, 5, 0, 7,  8,  8, 14, 15, 11, 12, 8,  9])
+    J = np.array( [1, 4, 2, 5, 3, 6, 7, 8, 14, 11, 15, 16, 12, 13, 9, 10])
+
+    LR = np.array([0, 1, 0, 1, 0, 1, 0, 0, 0,   1,  0,  0,  1,  1, 0, 0], dtype=bool)
+
+    for i in np.arange( len(I) ):
+        x, y, z = [np.array( [vals[I[i], j], vals[J[i], j]] ) for j in range(3)]
+        ax.plot(x, y, z, lw=2, color = lcolor if LR[i] else rcolor)
+
+    RADIUS = 0.72
+    RADIUS_Z = 0.7
+
+    xroot, yroot, zroot = vals[0,0], vals[0,1], vals[0,2]
+    ax.set_xlim3d([-RADIUS+xroot, RADIUS+xroot])
+    ax.set_ylim3d([-RADIUS+yroot, RADIUS+yroot])
+    ax.set_zlim3d([-RADIUS_Z+zroot, RADIUS_Z+zroot])
+    ax.set_aspect('equal') # works fine in matplotlib==2.2.2 or 3.7.1
+
+    white = (1.0, 1.0, 1.0, 0.0)
+    ax.xaxis.set_pane_color(white) 
+    ax.yaxis.set_pane_color(white)
+    ax.zaxis.set_pane_color(white)
+
+    ax.tick_params('x', labelbottom = False)
+    ax.tick_params('y', labelleft = False)
+    ax.tick_params('z', labelleft = False)
 
 
 def get_pose2D(video_path, output_dir):
@@ -44,6 +100,26 @@ def get_pose2D(video_path, output_dir):
     output_npz = output_dir + 'keypoints.npz'
     np.savez_compressed(output_npz, reconstruction=keypoints)
 
+
+def img2video(video_path, output_dir):
+    cap = cv2.VideoCapture(video_path)
+    fps = int(cap.get(cv2.CAP_PROP_FPS)) + 5
+
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+
+    names = sorted(glob.glob(os.path.join(output_dir + 'pose/', '*.png')))
+    img = cv2.imread(names[0])
+    size = (img.shape[1], img.shape[0])
+
+    videoWrite = cv2.VideoWriter(output_dir + video_name + '.mp4', fourcc, fps, size) 
+
+    for name in names:
+        img = cv2.imread(name)
+        videoWrite.write(img)
+
+    videoWrite.release()
+
+
 def showimage(ax, img):
     ax.set_xticks([])
     ax.set_yticks([]) 
@@ -52,28 +128,14 @@ def showimage(ax, img):
 
 
 def get_pose3D(video_path, output_dir):
-
-    use_gpu = True
-    #num_frames_total = 351
-    num_frames_total = 81
-    #num_frames_total = 27
-
-    num_frames_use = 5
-    #num_frames_use = 5
-
     args, _ = argparse.ArgumentParser().parse_known_args()
-    args.layers, args.channel, args.d_hid, args.frames = 3, 512, 1024, num_frames_total
-    args.previous_dir = f'checkpoint/pretrained/{num_frames_total}'
-    #args.previous_dir = 'checkpoint/pretrained/351'
-
+    args.layers, args.channel, args.d_hid, args.frames = 3, 512, 1024, 351
     args.pad = (args.frames - 1) // 2
+    args.previous_dir = 'checkpoint/pretrained/351'
     args.n_joints, args.out_joints = 17, 17
 
-    ## Reload
-    if use_gpu:
-        model = Model(args).cuda()
-    else:
-        model = Model(args)
+    ## Reload 
+    model = Model(args).cuda()
 
     model_dict = model.state_dict()
     # Put the pretrained model of MHFormer in 'checkpoint/pretrained/351'
@@ -92,30 +154,28 @@ def get_pose3D(video_path, output_dir):
     cap = cv2.VideoCapture(video_path)
     video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    timer = Timer()
-
     ## 3D
     print('\nGenerating 3D pose...')
     output_3d_all = []
     for i in tqdm(range(video_length)):
-
         ret, img = cap.read()
         img_size = img.shape
-       
-        input_2D_no = keypoints[0][i]
-        input_2D_no = np.tile(input_2D_no, (1, 1, 1))
 
-        num_joints = 17
-        num_dims = 2
-        input_2D_no = np.zeros([num_frames_use, num_joints, num_dims], dtype=np.float32)
+        ## input frames
+        start = max(0, i - args.pad)
+        end =  min(i + args.pad, len(keypoints[0])-1)
 
-        for ii in range(num_frames_use):
-            j = i - ii
-            k = num_frames_use - 1 - ii 
-            input_2D_no[k] = keypoints[0][j]
+        input_2D_no = keypoints[0][start:end+1]
+        
+        left_pad, right_pad = 0, 0
+        if input_2D_no.shape[0] != args.frames:
+            if i < args.pad:
+                left_pad = args.pad - i
+            if i > len(keypoints[0]) - args.pad - 1:
+                right_pad = i + args.pad - (len(keypoints[0]) - 1)
 
-        input_2D_no = interpolate_keypoints_2d(input_2D_no, num_frames_out=num_frames_total) 
-
+            input_2D_no = np.pad(input_2D_no, ((left_pad, right_pad), (0, 0), (0, 0)), 'edge')
+        
         joints_left =  [4, 5, 6, 11, 12, 13]
         joints_right = [1, 2, 3, 14, 15, 16]
 
@@ -128,23 +188,13 @@ def get_pose3D(video_path, output_dir):
         
         input_2D = input_2D[np.newaxis, :, :, :, :]
 
-        if use_gpu:
-            input_2D = torch.from_numpy(input_2D.astype('float32')).cuda()
-        else:
-            input_2D = torch.from_numpy(input_2D.astype('float32')).cpu()
+        input_2D = torch.from_numpy(input_2D.astype('float32')).cuda()
 
         N = input_2D.size(0)
 
         ## estimation
-        timer.tic()
-
         output_3D_non_flip = model(input_2D[:, 0])
         output_3D_flip     = model(input_2D[:, 1])
-        
-        dt = timer.toc()
-        fps = 1.0/dt
-
-        print(f"fps: {fps}")
 
         output_3D_flip[:, :, :, 0] *= -1
         output_3D_flip[:, :, joints_left + joints_right, :] = output_3D_flip[:, :, joints_right + joints_left, :] 
@@ -181,7 +231,6 @@ def get_pose3D(video_path, output_dir):
         output_dir_3D = output_dir +'pose3D/'
         os.makedirs(output_dir_3D, exist_ok=True)
         plt.savefig(output_dir_3D + str(('%04d'% i)) + '_3D.png', dpi=200, format='png', bbox_inches = 'tight')
-        plt.close(fig)
         
     ## save 3D keypoints
     output_3d_all = np.stack(output_3d_all, axis = 0)
@@ -192,11 +241,13 @@ def get_pose3D(video_path, output_dir):
     print('Generating 3D pose successfully!')
 
     ## all
+    image_dir = 'results/' 
     image_2d_dir = sorted(glob.glob(os.path.join(output_dir_2D, '*.png')))
     image_3d_dir = sorted(glob.glob(os.path.join(output_dir_3D, '*.png')))
 
     print('\nGenerating demo...')
     for i in tqdm(range(len(image_2d_dir))):
+
         image_2d = plt.imread(image_2d_dir[i])
         image_3d = plt.imread(image_3d_dir[i])
 
