@@ -20,8 +20,12 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.gridspec as gridspec
 
 from skyeye.pose_estimation.mhformer import interpolate_keypoints_2d
+from skyeye.pose_estimation.mhformer import rescale_skeleton_2d
 from skyeye.pose_estimation.mhformer import show2Dpose, show3Dpose
 from skyeye.pose_estimation.mhformer import img2video
+
+from skyeye.pose_estimation.utils import plot_skeleton_2d
+
 from skyeye.utils import Timer
 
 
@@ -51,23 +55,24 @@ def showimage(ax, img):
     ax.imshow(img)
 
 
-def get_pose3D(video_path, output_dir):
+def get_pose3D(video_path, output_dir, debug=False):
 
     use_gpu = True
-    #num_frames_total = 351
-    num_frames_total = 81
-    #num_frames_total = 27
+    #num_frames_model = 351
+    num_frames_model = 81
+    #num_frames_model = 27
 
     num_frames_use = 5
-    #num_frames_use = 5
 
     args, _ = argparse.ArgumentParser().parse_known_args()
-    args.layers, args.channel, args.d_hid, args.frames = 3, 512, 1024, num_frames_total
-    args.previous_dir = f'checkpoint/pretrained/{num_frames_total}'
+    args.layers, args.channel, args.d_hid, args.frames = 3, 512, 1024, num_frames_model
+    args.previous_dir = f'checkpoint/pretrained/{num_frames_model}'
     #args.previous_dir = 'checkpoint/pretrained/351'
 
     args.pad = (args.frames - 1) // 2
     args.n_joints, args.out_joints = 17, 17
+
+    timer = Timer()
 
     ## Reload
     if use_gpu:
@@ -76,14 +81,12 @@ def get_pose3D(video_path, output_dir):
         model = Model(args)
 
     model_dict = model.state_dict()
-    # Put the pretrained model of MHFormer in 'checkpoint/pretrained/351'
     model_path = sorted(glob.glob(os.path.join(args.previous_dir, '*.pth')))[0]
 
     pre_dict = torch.load(model_path)
     for name, key in model_dict.items():
         model_dict[name] = pre_dict[name]
     model.load_state_dict(model_dict)
-
     model.eval()
 
     ## input
@@ -91,8 +94,34 @@ def get_pose3D(video_path, output_dir):
 
     cap = cv2.VideoCapture(video_path)
     video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
-    timer = Timer()
+    print(f"frame_width, frame_height: {frame_width}, {frame_height}")   
+
+    output_dir_2D_rescale = os.path.join(output_dir, "pose2D_rescale")
+    os.makedirs(output_dir_2D_rescale, exist_ok=True)
+
+    # Rescale keypoints
+    keypoints_rescale = keypoints.copy()
+    for i in tqdm(range(video_length)):
+        keypoints_rescale[0, i, :, :] = rescale_skeleton_2d(keypoints_rescale[0, i, :, :],
+            frame_width, frame_height)
+
+        if debug:
+            fig = plt.figure(figsize=(9.6, 5.4))
+            ax = plt.subplot(111)
+            
+            plot_skeleton_2d(ax, keypoints_rescale[0, i, :, :], with_index=True,
+                title="2D rescale", xlabel="x", ylabel="y",
+                invert_xaxis=False, invert_yaxis=True,
+                xlim=[0, frame_width], ylim=[0, frame_height])
+    
+            filepath = f"{output_dir_2D_rescale}/{i:04d}_2D_rescale.png"
+            plt.savefig(filepath, dpi=200, format='png', bbox_inches = 'tight')
+            plt.close(fig)
+
+    #keypoints = keypoints_rescale
 
     ## 3D
     print('\nGenerating 3D pose...')
@@ -102,7 +131,7 @@ def get_pose3D(video_path, output_dir):
         ret, img = cap.read()
         img_size = img.shape
        
-        input_2D_no = keypoints[0][i]
+        input_2D_no = keypoints_rescale[0][i]
         input_2D_no = np.tile(input_2D_no, (1, 1, 1))
 
         num_joints = 17
@@ -114,7 +143,7 @@ def get_pose3D(video_path, output_dir):
             k = num_frames_use - 1 - ii 
             input_2D_no[k] = keypoints[0][j]
 
-        input_2D_no = interpolate_keypoints_2d(input_2D_no, num_frames_out=num_frames_total) 
+        input_2D_no = interpolate_keypoints_2d(input_2D_no, num_frames_out=num_frames_model) 
 
         joints_left =  [4, 5, 6, 11, 12, 13]
         joints_right = [1, 2, 3, 14, 15, 16]
@@ -165,22 +194,27 @@ def get_pose3D(video_path, output_dir):
         input_2D_no = input_2D_no[args.pad]
 
         ## 2D
-        image = show2Dpose(input_2D_no, copy.deepcopy(img))
+        image = show2Dpose(keypoints[0, i, :, :], copy.deepcopy(img))
+        #image = show2Dpose(input_2D_no, copy.deepcopy(img))
 
         output_dir_2D = output_dir +'pose2D/'
         os.makedirs(output_dir_2D, exist_ok=True)
-        cv2.imwrite(output_dir_2D + str(('%04d'% i)) + '_2D.png', image)
+
+        filepath = f"{output_dir_2D}/{i:04d}_2D.png"
+        cv2.imwrite(filepath, image)
 
         ## 3D
         fig = plt.figure( figsize=(9.6, 5.4))
         gs = gridspec.GridSpec(1, 1)
         gs.update(wspace=-0.00, hspace=0.05) 
         ax = plt.subplot(gs[0], projection='3d')
-        show3Dpose( post_out, ax)
+        show3Dpose(post_out, ax)
 
         output_dir_3D = output_dir +'pose3D/'
         os.makedirs(output_dir_3D, exist_ok=True)
-        plt.savefig(output_dir_3D + str(('%04d'% i)) + '_3D.png', dpi=200, format='png', bbox_inches = 'tight')
+
+        filepath = f"{output_dir_3D}/{i:04d}_3D.png"
+        plt.savefig(filepath, dpi=200, format='png', bbox_inches = 'tight')
         plt.close(fig)
         
     ## save 3D keypoints
@@ -222,6 +256,8 @@ def get_pose3D(video_path, output_dir):
         output_dir_pose = output_dir +'pose/'
         os.makedirs(output_dir_pose, exist_ok=True)
         plt.savefig(output_dir_pose + str(('%04d'% i)) + '_pose.png', dpi=200, bbox_inches = 'tight')
+        plt.close(fig)
+
 
 if __name__ == "__main__":
 
@@ -236,7 +272,12 @@ if __name__ == "__main__":
     video_name = video_path.split('/')[-1].split('.')[0]
     output_dir = './demo/output/' + video_name + '/'
 
-    get_pose2D(video_path, output_dir)
+    if os.path.exists(video_path):
+        print(f"{video_path} is found.")
+    else:
+        print(f"Error: {video_path} doesn't exist!")
+
+    #get_pose2D(video_path, output_dir)
     get_pose3D(video_path, output_dir)
     img2video(video_path, output_dir)
     print('Generating demo successful!')
