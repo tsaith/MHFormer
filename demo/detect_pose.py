@@ -14,17 +14,17 @@ sys.path.append(os.getcwd())
 from model.mhformer import Model
 from common.camera import *
 
-import matplotlib
 import matplotlib.pyplot as plt 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.gridspec as gridspec
 
 from skyeye.pose_estimation.mhformer import interpolate_keypoints_2d
-from skyeye.pose_estimation.mhformer import rescale_skeleton_2d
+from skyeye.pose_estimation.mhformer import rescale_skeleton_2d, rescale_skeleton_3d
+from skyeye.pose_estimation.mhformer import update_skeleton_depth_only
 from skyeye.pose_estimation.mhformer import show2Dpose, show3Dpose
 from skyeye.pose_estimation.mhformer import img2video
 
-from skyeye.pose_estimation.utils import plot_skeleton_2d
+from skyeye.pose_estimation.utils import plot_skeleton_2d, plot_skeleton_3d
 
 from skyeye.utils import Timer
 
@@ -97,31 +97,17 @@ def get_pose3D(video_path, output_dir, debug=False):
     frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
-    print(f"frame_width, frame_height: {frame_width}, {frame_height}")   
+    output_dir_diag_2d = os.path.join(output_dir, "diag_2d")
+    os.makedirs(output_dir_diag_2d, exist_ok=True)
 
-    output_dir_2D_rescale = os.path.join(output_dir, "pose2D_rescale")
-    os.makedirs(output_dir_2D_rescale, exist_ok=True)
+    output_dir_diag_3d = os.path.join(output_dir, "diag_3d")
+    os.makedirs(output_dir_diag_3d, exist_ok=True)
 
     # Rescale keypoints
     keypoints_rescale = keypoints.copy()
     for i in tqdm(range(video_length)):
         keypoints_rescale[0, i, :, :] = rescale_skeleton_2d(keypoints_rescale[0, i, :, :],
             frame_width, frame_height)
-
-        if debug:
-            fig = plt.figure(figsize=(9.6, 5.4))
-            ax = plt.subplot(111)
-            
-            plot_skeleton_2d(ax, keypoints_rescale[0, i, :, :], with_index=True,
-                title="2D rescale", xlabel="x", ylabel="y",
-                invert_xaxis=False, invert_yaxis=True,
-                xlim=[0, frame_width], ylim=[0, frame_height])
-    
-            filepath = f"{output_dir_2D_rescale}/{i:04d}_2D_rescale.png"
-            plt.savefig(filepath, dpi=200, format='png', bbox_inches = 'tight')
-            plt.close(fig)
-
-    #keypoints = keypoints_rescale
 
     ## 3D
     print('\nGenerating 3D pose...')
@@ -131,7 +117,9 @@ def get_pose3D(video_path, output_dir, debug=False):
         ret, img = cap.read()
         img_size = img.shape
        
-        input_2D_no = keypoints_rescale[0][i]
+        skel_2d_rescale = keypoints_rescale[0][i]
+
+        input_2D_no = skel_2d_rescale
         input_2D_no = np.tile(input_2D_no, (1, 1, 1))
 
         num_joints = 17
@@ -141,7 +129,8 @@ def get_pose3D(video_path, output_dir, debug=False):
         for ii in range(num_frames_use):
             j = i - ii
             k = num_frames_use - 1 - ii 
-            input_2D_no[k] = keypoints[0][j]
+            input_2D_no[k] = keypoints_rescale[0][j]
+            #input_2D_no[k] = keypoints[0][j]
 
         input_2D_no = interpolate_keypoints_2d(input_2D_no, num_frames_out=num_frames_model) 
 
@@ -181,21 +170,56 @@ def get_pose3D(video_path, output_dir, debug=False):
         output_3D = (output_3D_non_flip + output_3D_flip) / 2
 
         output_3D = output_3D[0:, args.pad].unsqueeze(1) 
-        output_3D[:, :, 0, :] = 0
-        post_out = output_3D[0, 0].cpu().detach().numpy()
+        output_3D[:, :, 0, :] = 0 # Set the pelvis at original point
+        skel_out = output_3D[0, 0].cpu().detach().numpy()
 
-        output_3d_all.append(post_out)
+        # Rescale 3D skeleton
+        skel_out = rescale_skeleton_3d(skel_out, skel_2d_rescale)
 
+        # Update skeleton with depth only
+        skel_out = update_skeleton_depth_only(skel_out, skel_2d_rescale)
+
+        # Save outputs
+        output_3d_all.append(skel_out)
+
+        # Diagnostic
+        if debug:
+
+            fig = plt.figure(figsize=(12, 6))
+            ax = plt.subplot(121)
+            
+            plot_skeleton_2d(ax, skel_out[:, 0:2], with_index=False,
+                title="2D Plot", xlabel="x", ylabel="y",
+                invert_xaxis=False, invert_yaxis=True,
+                xlim=[-0.5*frame_width, 0.5*frame_width],
+                ylim=[-0.5*frame_height, 0.5*frame_height])
+    
+            filepath = f"{output_dir_diag_2d}/{i:04d}_2d.png"
+
+            ax1 = plt.subplot(122, projection='3d')
+            plot_skeleton_3d(ax1, skel_out, elev=20, azim=10, roll=-80, with_index=False,
+                    title="3D Plot", xlabel="x", ylabel="y", zlabel="z",
+                    invert_xaxis=True, invert_yaxis=False, invert_zaxis=True,
+                    #xlim=[-1.0, 1.0], ylim=[-1.0, 1.0], zlim=[-1.0, 1.0])
+                    xlim=[-0.5*frame_width, 0.5*frame_width],
+                    ylim=[-0.5*frame_height, 0.5*frame_height],
+                    zlim=[-0.5*frame_width, 0.5*frame_width])
+        
+            filepath = f"{output_dir_diag_3d}/{i:04d}_3d.png"
+            plt.savefig(filepath, dpi=200, format='png', bbox_inches = 'tight')
+            plt.close(fig)
+
+
+        post_out = skel_out.copy()
+    
+        # Rotation axes
         rot =  [0.1407056450843811, -0.1500701755285263, -0.755240797996521, 0.6223280429840088]
         rot = np.array(rot, dtype='float32')
         post_out = camera_to_world(post_out, R=rot, t=0)
         post_out[:, 2] -= np.min(post_out[:, 2])
 
-        input_2D_no = input_2D_no[args.pad]
-
         ## 2D
         image = show2Dpose(keypoints[0, i, :, :], copy.deepcopy(img))
-        #image = show2Dpose(input_2D_no, copy.deepcopy(img))
 
         output_dir_2D = output_dir +'pose2D/'
         os.makedirs(output_dir_2D, exist_ok=True)
@@ -216,7 +240,8 @@ def get_pose3D(video_path, output_dir, debug=False):
         filepath = f"{output_dir_3D}/{i:04d}_3D.png"
         plt.savefig(filepath, dpi=200, format='png', bbox_inches = 'tight')
         plt.close(fig)
-        
+
+
     ## save 3D keypoints
     output_3d_all = np.stack(output_3d_all, axis = 0)
     os.makedirs(output_dir + 'output_3D/', exist_ok=True)
@@ -231,6 +256,7 @@ def get_pose3D(video_path, output_dir, debug=False):
 
     print('\nGenerating demo...')
     for i in tqdm(range(len(image_2d_dir))):
+
         image_2d = plt.imread(image_2d_dir[i])
         image_3d = plt.imread(image_3d_dir[i])
 
@@ -278,7 +304,7 @@ if __name__ == "__main__":
         print(f"Error: {video_path} doesn't exist!")
 
     #get_pose2D(video_path, output_dir)
-    get_pose3D(video_path, output_dir)
+    get_pose3D(video_path, output_dir, debug=False)
     img2video(video_path, output_dir)
     print('Generating demo successful!')
 
