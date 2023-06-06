@@ -15,16 +15,14 @@ from model.mhformer import Model
 from common.camera import *
 
 import matplotlib.pyplot as plt 
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.gridspec as gridspec
 
-from skyeye.pose_estimation.mhformer import interpolate_keypoints_2d
-from skyeye.pose_estimation.mhformer import rescale_skeleton_2d, rescale_skeleton_3d
-from skyeye.pose_estimation.mhformer import update_skeleton_depth_only
-from skyeye.pose_estimation.mhformer import show2Dpose, show3Dpose
-from skyeye.pose_estimation.mhformer import img2video
-
-from skyeye.pose_estimation.utils import plot_skeleton_2d, plot_skeleton_3d
+from libmhformer import interpolate_keypoints_2d
+from libmhformer import rescale_skeleton_2d, rescale_skeleton_3d
+from libmhformer import update_skeleton_depth_only
+from libmhformer import img2video
+from plot_utils import show2Dpose, show3Dpose
+from plot_utils import plot_skeleton_2d, plot_skeleton_3d
 
 from skyeye.utils import Timer
 
