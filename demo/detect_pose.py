@@ -128,7 +128,6 @@ def get_pose3D(video_path, output_dir, debug=False):
             j = i - ii
             k = num_frames_use - 1 - ii 
             input_2D_no[k] = keypoints_rescale[0][j]
-            #input_2D_no[k] = keypoints[0][j]
 
         input_2D_no = interpolate_keypoints_2d(input_2D_no, num_frames_out=num_frames_model) 
 

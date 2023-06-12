@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def rotate_vector_3d(vector, theta, axis="x"):
     """Rotate a 3D vector by theta degrees counterclockwise around an axis."""
 

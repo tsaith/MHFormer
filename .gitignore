@@ -9,6 +9,14 @@
 *.tar
 *.npz
 
+# Libs
+libs/*
+*.so
+*.dll
+
+# Build
+build/
+
 # Videos
 videos/
 video/

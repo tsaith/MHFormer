@@ -3,7 +3,6 @@ import cv2 as cv
 
 import matplotlib
 import matplotlib.pyplot as plt 
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.gridspec as gridspec
 
 from skeleton_utils import pose_connection, re_order_indices, re_order
