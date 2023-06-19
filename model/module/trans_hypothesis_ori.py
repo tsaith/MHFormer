@@ -149,8 +149,7 @@ class CHI_Block(nn.Module):
         x = torch.cat([x_1, x_2, x_3], dim=2)
         x = x + self.drop_path(self.mlp(self.norm2(x)))
 
-        x_1 = x[:, :, :torch.div(x.shape[2], 3, rounding_mode="trunc")]
-        #x_1 = x[:, :, :x.shape[2] // 3]
+        x_1 = x[:, :, :x.shape[2] // 3]
 
         x_2 = x[:, :, x.shape[2] // 3: x.shape[2] // 3 * 2]
         x_3 = x[:, :, x.shape[2] // 3 * 2: x.shape[2]]
@@ -202,14 +201,8 @@ class Transformer(nn.Module):
         x_2 = self.pos_drop_2(x_2)
         x_3 = self.pos_drop_3(x_3)
 
-        #num_blocks = len()
-
-        for blk in self.SHR_blocks:
-            x_1, x_2, x_3 = blk(x_1, x_2, x_3)
-
-
-        #for i, blk in enumerate(self.SHR_blocks):
-        #    x_1, x_2, x_3 = self.SHR_blocks[i](x_1, x_2, x_3)
+        for i, blk in enumerate(self.SHR_blocks):
+            x_1, x_2, x_3 = self.SHR_blocks[i](x_1, x_2, x_3)
 
         x_1, x_2, x_3 = self.CHI_blocks[0](x_1, x_2, x_3)
 

@@ -19,9 +19,9 @@ find_package(OpenCV REQUIRED)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${OpenCV_CXX_FLAGS} ${TORCH_CXX_FLAGS})
 set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl") 
 
-set(SRC main.cpp mocap_mp_proxy_linux.cpp) 
+set(SRC detect.cpp) 
 
-add_executable(detect main.cpp mocap_mp_proxy_linux.cpp)
+add_executable(detect ${SRC})
 target_link_libraries(detect ${OpenCV_LIBS})
 target_link_libraries(detect ${TORCH_LIBRARIES})
 

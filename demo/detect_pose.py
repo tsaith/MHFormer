@@ -55,12 +55,19 @@ def showimage(ax, img):
 
 def get_pose3D(video_path, output_dir, debug=False):
 
-    use_gpu = True
+    use_gpu = False
+    #use_gpu = True
+
     #num_frames_model = 351
     num_frames_model = 81
     #num_frames_model = 27
 
     num_frames_use = 5
+
+    export_torchscript_model = False
+    #export_torchscript_model = True
+    model_scripted_filepath = "checkpoint/pretrained/torchscript_model.pth"
+    model_traced_filepath = "checkpoint/pretrained/torchscript_model_traced.pth"
 
     args, _ = argparse.ArgumentParser().parse_known_args()
     args.layers, args.channel, args.d_hid, args.frames = 3, 512, 1024, num_frames_model
@@ -82,10 +89,21 @@ def get_pose3D(video_path, output_dir, debug=False):
     model_path = sorted(glob.glob(os.path.join(args.previous_dir, '*.pth')))[0]
 
     pre_dict = torch.load(model_path)
+
+    #print(f"pre_dict: {pre_dict}")
+    #print(f"model_dict: {model_dict}")
+
     for name, key in model_dict.items():
         model_dict[name] = pre_dict[name]
+
+    #print(f"updated model_dict: {model_dict}")
+
     model.load_state_dict(model_dict)
     model.eval()
+
+    if export_torchscript_model:
+        model_scripted = torch.jit.script(model)
+        model_scripted.save(model_scripted_filepath)
 
     ## input
     keypoints = np.load(output_dir + 'input_2D/keypoints.npz', allow_pickle=True)['reconstruction']
@@ -106,6 +124,11 @@ def get_pose3D(video_path, output_dir, debug=False):
     for i in tqdm(range(video_length)):
         keypoints_rescale[0, i, :, :] = rescale_skeleton_2d(keypoints_rescale[0, i, :, :],
             frame_width, frame_height)
+
+    i_diag = 60
+
+    print(f"video_length: {video_length}")
+    print(f"i_diag: {i_diag}")
 
     ## 3D
     print('\nGenerating 3D pose...')
@@ -148,10 +171,21 @@ def get_pose3D(video_path, output_dir, debug=False):
         else:
             input_2D = torch.from_numpy(input_2D.astype('float32')).cpu()
 
-        N = input_2D.size(0)
+        #N = input_2D.size(0)
+        
+        if export_torchscript_model:
+            traced_script_module = torch.jit.trace(model, input_2D[:, 0])
+            traced_script_module.save(model_traced_filepath)
+
+
+        if i == i_diag:
+
+            print(f"input_2D[0, 0, 80]: {input_2D[0, 0, 80]}")
+            print(f"input_2D[0, 1, 80]: {input_2D[0, 1, 80]}")
 
         ## estimation
         timer.tic()
+
 
         output_3D_non_flip = model(input_2D[:, 0])
         output_3D_flip     = model(input_2D[:, 1])
