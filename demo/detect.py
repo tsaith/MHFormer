@@ -89,6 +89,7 @@ def get_pose3D(video_path, output_dir, debug=False):
     model_path = sorted(glob.glob(os.path.join(args.previous_dir, '*.pth')))[0]
 
     pre_dict = torch.load(model_path)
+    #pre_dict = torch.jit.load(model_traced_filepath)
 
     #print(f"pre_dict: {pre_dict}")
     #print(f"model_dict: {model_dict}")
@@ -186,6 +187,7 @@ def get_pose3D(video_path, output_dir, debug=False):
         ## estimation
         timer.tic()
 
+        print(f"input_2D[:, 0]: {input_2D[:, 0].shape}")
 
         output_3D_non_flip = model(input_2D[:, 0])
         output_3D_flip     = model(input_2D[:, 1])

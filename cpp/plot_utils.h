@@ -1,1 +1,0 @@
-/home/andrew/projects/Mediapipe/mediapipe/nhis/src/plot_utils.h
