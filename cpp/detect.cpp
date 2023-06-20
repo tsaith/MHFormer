@@ -7,6 +7,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <torch/script.h>
+#include "libplot.h"
 
 
 using namespace std;
@@ -106,6 +107,19 @@ void PrintTensorShape(string Msg, at::Tensor& T, int Dims) {
 
 }
 
+void PrintPoint(string Msg, vector<float> &Point, int Dims) {
+
+    string outMsg = "";
+    outMsg += Msg;
+    outMsg += ": ";
+    for (int i=0; i < Dims; i++) {
+        outMsg += "[" + std::to_string(Point[i]) + "]";
+    }
+
+    cout << outMsg << endl;
+
+}
+
 Vector4d CreateMockInputVec(int BatchSize, int NumFrames, int NumJoints, int Dim2d) {
 
     Vector2d keypoints = GetMockKeypoints();
@@ -138,6 +152,24 @@ torch::Tensor CreateInputTensor(Vector4d& InputVec) {
 
 }
 
+Vector2d GetPoseOut(at::Tensor& Outputs) {
+
+    int numJoints = Outputs.size(2);
+    int dims = 3;
+
+    Vector2d pose = InitVec2d(numJoints, dims);
+    for (int i=0; i < numJoints; i++) {
+        for (int j=0; j < dims; j++) {
+            
+            pose[i][j] = Outputs[0][0][i][j].item<float>();
+
+        }
+    }
+
+    return pose;
+
+}
+
 
 int main() {
 
@@ -151,15 +183,8 @@ int main() {
     const int dim2d = 2;
     const int dim3d = 3;
 
-    Vector2d mockKeypoints = GetMockKeypoints();
     Vector4d mockInputVec = CreateMockInputVec(batchSize, numFramesModel, numJoints, dim2d);
-
     torch::Tensor inputTensor = CreateInputTensor(mockInputVec);
-
-    //Vector3d inputVec = InitVec3d(numFramesModel, numJoints, dim2d);
-    //torch::Tensor inputTensor;
-    //inputTensor = torch::from_blob(inputVec.data(), {1, numFramesModel, numJoints, dim2d});
-
 
     cout << "Start to load the trained model." << endl;
 
@@ -180,6 +205,21 @@ int main() {
     at::Tensor outputTensor = model.forward(inputs).toTensor();
 
     PrintTensorShape("outTensor shape:", outputTensor, 4);
+
+    Vector2d poseOut = GetPoseOut(outputTensor);
+
+    string ViewType = "x-y";
+    Vector2d poseXY = GetPoseCrossSection(poseOut, ViewType);
+
+    cv::Mat imageDiag = cv::Mat(480, 640, CV_8UC3, cv::Scalar(255, 255, 255));
+
+    PlotPose2d(imageDiag, poseXY);
+
+    PrintPoint("poseXY[8]: ", poseXY[8], 3);
+
+    cv::imshow("win", imageDiag);
+
+    int keyCode = cv::waitKey(0);
 
     cout << "End of run." << endl;
 

@@ -10,16 +10,13 @@ else () # For Win
     set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "C:\\opt\\libtorch")
 endif (UNIX)
 
-#include_directories("/home/andrew/anaconda3/include")
-#link_directories("/home/andrew/anaconda3/lib")
-
 find_package(Torch REQUIRED)
 find_package(OpenCV REQUIRED)
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${OpenCV_CXX_FLAGS} ${TORCH_CXX_FLAGS})
 set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl") 
 
-set(SRC detect.cpp) 
+set(SRC detect.cpp libplot.cpp) 
 
 add_executable(detect ${SRC})
 target_link_libraries(detect ${OpenCV_LIBS})
