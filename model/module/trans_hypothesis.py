@@ -149,8 +149,8 @@ class CHI_Block(nn.Module):
         x = torch.cat([x_1, x_2, x_3], dim=2)
         x = x + self.drop_path(self.mlp(self.norm2(x)))
 
-        x_1 = x[:, :, :torch.div(x.shape[2], 3, rounding_mode="trunc")]
-        #x_1 = x[:, :, :x.shape[2] // 3]
+        #x_1 = x[:, :, :torch.div(x.shape[2], 3, rounding_mode="trunc")]
+        x_1 = x[:, :, :x.shape[2] // 3]
 
         x_2 = x[:, :, x.shape[2] // 3: x.shape[2] // 3 * 2]
         x_3 = x[:, :, x.shape[2] // 3 * 2: x.shape[2]]

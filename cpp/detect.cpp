@@ -7,175 +7,21 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <torch/script.h>
-#include "libplot.h"
 
+#include "libdetect.h"
+#include "libplot.h"
 
 using namespace std;
 using namespace cv;
 
-typedef vector<vector<float>> Vector2d;
-typedef vector<Vector2d> Vector3d;
-typedef vector<Vector3d> Vector4d;
-
-
-Vector2d GetMockKeypoints() {
-
-    Vector2d keypoints {
-
-        { 0.0000,  0.0000},                                                                          
-        {-0.0542, -0.0163},                                                                                              
-        {-0.0651,  0.2169},                                                                                              
-        {-0.2169,  0.2602},                                                                                              
-        { 0.0542,  0.0163},                                                                                              
-        { 0.0271,  0.2819},                                                                                              
-        { 0.0325,  0.5259},                                                                                              
-        { 0.0352, -0.1355},                                                                                              
-        { 0.0054, -0.2801},                                                                                              
-        {-0.0217, -0.3199},                                                                                              
-        {-0.0258, -0.3741},
-        { 0.1193, -0.2711},                                                                                              
-        { 0.2060, -0.1681},
-        { 0.1084, -0.1030},                                                                                              
-        {-0.0651, -0.2711},
-        {-0.1572, -0.2006},                                                                                              
-        {-0.0651, -0.1030}
-
-    };
-
-    return keypoints;
-
-}
-
-/*
-input_2D[0, 1, 80]: tensor([[-0.0000,  0.0000],                                                                          
-        [-0.0542,  0.0163],                                 
-        [-0.0271,  0.2819],                                                                                              
-        [-0.0325,  0.5259],                                 
-        [ 0.0542, -0.0163],                                                                                              
-        [ 0.0651,  0.2169],                                 
-        [ 0.2169,  0.2602],
-        [-0.0352, -0.1355],
-        [-0.0054, -0.2801],
-        [ 0.0217, -0.3199],
-        [ 0.0258, -0.3741],
-        [ 0.0651, -0.2711],
-        [ 0.1572, -0.2006],
-        [ 0.0651, -0.1030],
-        [-0.1193, -0.2711],
-        [-0.2060, -0.1681],
-        [-0.1084, -0.1030]])
-*/
-
-
-Vector2d InitVec2d(int Rows, int Cols){
-    Vector2d vec2d(Rows, vector<float>(Cols, 0.0));
-    return vec2d;
-}
-
-Vector3d InitVec3d(int Nt, int Rows, int Cols){
-
-    Vector3d vec3d;
-    for (int i=0; i < Nt; i++) {
-        vec3d.push_back(InitVec2d(Rows, Cols));
-    }
-
-    return vec3d;
-
-}
-
-Vector4d InitVec4d(int BatchSize, int Nt, int Rows, int Cols){
-
-    Vector4d vec4d;
-    for (int i=0; i < BatchSize; i++) {
-        vec4d.push_back(InitVec3d(Nt, Rows, Cols));
-    }
-
-    return vec4d;
-
-}
-
-void PrintTensorShape(string Msg, at::Tensor& T, int Dims) {
-
-    string outMsg = "";
-    outMsg += Msg;
-    outMsg += ": ";
-    for (int i=0; i < Dims; i++) {
-        outMsg += "[" + std::to_string(T.size(i)) + "]";
-    }
-
-    cout << outMsg << endl;
-
-}
-
-void PrintPoint(string Msg, vector<float> &Point, int Dims) {
-
-    string outMsg = "";
-    outMsg += Msg;
-    outMsg += ": ";
-    for (int i=0; i < Dims; i++) {
-        outMsg += "[" + std::to_string(Point[i]) + "]";
-    }
-
-    cout << outMsg << endl;
-
-}
-
-Vector4d CreateMockInputVec(int BatchSize, int NumFrames, int NumJoints, int Dim2d) {
-
-    Vector2d keypoints = GetMockKeypoints();
-    Vector4d inputVec = InitVec4d(BatchSize, NumFrames, NumJoints, Dim2d);
-
-    for (int ib=0; ib < BatchSize; ib++) {
-        for (int i=0; i < NumFrames; i++) {
-            for (int j=0; j < NumJoints; j++) {
-                for (int k=0; k < Dim2d; k++) {
-                    inputVec[ib][i][j][k] = keypoints[j][k];
-                }
-            }
-        }
-    }
-
-    return inputVec;
-
-}
-
-torch::Tensor CreateInputTensor(Vector4d& InputVec) {
-
-    int batchSize = InputVec.size();
-    int numFrames = InputVec[0].size();
-    int numJoints = InputVec[0][0].size();
-    int dim2d = InputVec[0][0][0].size();
-
-    torch::Tensor inputTensor = torch::from_blob(InputVec.data(), {batchSize, numFrames, numJoints, dim2d});
-
-    return inputTensor;
-
-}
-
-Vector2d GetPoseOut(at::Tensor& Outputs) {
-
-    int numJoints = Outputs.size(2);
-    int dims = 3;
-
-    Vector2d pose = InitVec2d(numJoints, dims);
-    for (int i=0; i < numJoints; i++) {
-        for (int j=0; j < dims; j++) {
-            
-            pose[i][j] = Outputs[0][0][i][j].item<float>();
-
-        }
-    }
-
-    return pose;
-
-}
-
-
 int main() {
 
     string msg;
+
+    int frameWidth = 640;
+    int frameHeight = 480;
     
-    string modelPath = "/home/andrew/projects/MHFormer/checkpoint/pretrained/torchscript_model_traced.pth";
+    string modelPath = "../../checkpoint/pretrained/torchscript_model_traced.pth";
  
     const int batchSize= 1;
     const int numFramesModel= 81;
@@ -183,8 +29,22 @@ int main() {
     const int dim2d = 2;
     const int dim3d = 3;
 
+
+    Vector2d pose2d = GetMockKeypoints();
+    cout << "pose2d: " << pose2d << endl;
+
     Vector4d mockInputVec = CreateMockInputVec(batchSize, numFramesModel, numJoints, dim2d);
+    /*
+    cout << "mockInputVec: " << mockInputVec << endl;
+    cout << "mockInputVec x: " << mockInputVec[0][0][10][0] << endl;
+    cout << "mockInputVec y: " << mockInputVec[0][0][10][1] << endl;
+    */
+
+
     torch::Tensor inputTensor = CreateInputTensor(mockInputVec);
+
+
+    //cout << "inputTensor: " << inputTensor << endl;
 
     cout << "Start to load the trained model." << endl;
 
@@ -197,25 +57,42 @@ int main() {
         return -1;
     }
 
-    PrintTensorShape("inputTensor shape", inputTensor, 4);
+    //PrintTensorShape("inputTensor shape", inputTensor, 4);
+    cout << "inputTensor.sizes():" << inputTensor.sizes() << endl;
+
 
     std::vector<torch::jit::IValue> inputs;
     inputs.push_back(inputTensor);
 
-    at::Tensor outputTensor = model.forward(inputs).toTensor();
+    torch::Tensor outputTensor = model.forward(inputs).toTensor();
 
-    PrintTensorShape("outTensor shape:", outputTensor, 4);
+    //cout << "outputTensor[0][0]: " << outputTensor[0][0] << endl;
 
     Vector2d poseOut = GetPoseOut(outputTensor);
 
-    string ViewType = "x-y";
-    Vector2d poseXY = GetPoseCrossSection(poseOut, ViewType);
+    Vector2d pose3d = RescalePose3d(poseOut, pose2d);
+    cout << "pose3d: " << pose3d << endl;
 
-    cv::Mat imageDiag = cv::Mat(480, 640, CV_8UC3, cv::Scalar(255, 255, 255));
+    Vector2d pose3dPixel = ToPixelSpace(pose3d, frameWidth, frameHeight);
+    //cout << "pose3dPixel: " << pose3dPixel << endl;
 
-    PlotPose2d(imageDiag, poseXY);
+    Vector2d poseXY = GetPoseCrossSection(pose3dPixel, "x-y");
+    Vector2d poseZY = GetPoseCrossSection(pose3dPixel, "z-y");
+    cout << "poseZY: " << poseZY << endl;
 
-    PrintPoint("poseXY[8]: ", poseXY[8], 3);
+    cv::Mat imageDiag = cv::Mat(frameHeight, frameWidth, CV_8UC3, cv::Scalar(255, 255, 255));
+
+    int shiftX, shiftY;
+
+    /*
+    shiftX = int(0.5*frameWidth);
+    shiftY = int(0.5*frameHeight);
+    PlotPose2dWithShift(imageDiag, poseXY, shiftX, shiftY);
+    */
+
+    shiftX = int(0.5*frameWidth);
+    shiftY = int(0.5*frameHeight);
+    PlotPose2dWithShift(imageDiag, poseZY, shiftX, shiftY);
 
     cv::imshow("win", imageDiag);
 

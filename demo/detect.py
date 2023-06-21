@@ -102,9 +102,11 @@ def get_pose3D(video_path, output_dir, debug=False):
     model.load_state_dict(model_dict)
     model.eval()
 
+    '''
     if export_torchscript_model:
         model_scripted = torch.jit.script(model)
         model_scripted.save(model_scripted_filepath)
+    '''
 
     ## input
     keypoints = np.load(output_dir + 'input_2D/keypoints.npz', allow_pickle=True)['reconstruction']
@@ -196,6 +198,14 @@ def get_pose3D(video_path, output_dir, debug=False):
         fps = 1.0/dt
 
         print(f"fps: {fps}")
+
+
+        if i == i_diag:
+
+            print(f"output_3D_non_flip.shape: {output_3D_non_flip.shape}")
+            print(f"output_3D_non_flip[0, 0]: {output_3D_non_flip[0, 0]}")
+            print(f"output_3D_flip[0, 0]: {output_3D_flip[0, 0]}")
+
 
         output_3D_flip[:, :, :, 0] *= -1
         output_3D_flip[:, :, joints_left + joints_right, :] = output_3D_flip[:, :, joints_right + joints_left, :] 
