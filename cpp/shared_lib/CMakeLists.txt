@@ -23,7 +23,7 @@ add_library(bg_matting SHARED ${SRC})
 set_target_properties(bg_matting PROPERTIES
     VERSION ${PROJECT_VERSION}
     #PUBLIC_HEADER ${HEADER}
-    CXX_STANDARD 14)
+    CXX_STANDARD 17)
 
 target_link_libraries(bg_matting ${OpenCV_LIBS})
 target_link_libraries(bg_matting ${TORCH_LIBRARIES})

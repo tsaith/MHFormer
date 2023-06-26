@@ -139,6 +139,126 @@ Vector4d InitVec4d(int BatchSize, int Nt, int Rows, int Cols){
 
 }
 
+
+Vector2d NormalizeKeypoints(Vector2d& Keypoints, int FrameWidth, int FrameHeight) {
+
+    Vector2d keypoints = Keypoints;
+
+    int numJoints = Keypoints.size();
+    int dim2d = Keypoints[0].size();
+
+    for (int i=0; i < numJoints; i++) {
+
+        keypoints[i][0] = 2.0*keypoints[i][0]/FrameWidth - 1.0;
+        keypoints[i][1] = 2.0*keypoints[i][1]/FrameWidth - 1.0*FrameHeight/FrameWidth;
+
+    }
+
+    return keypoints;
+
+}
+
+Vector2d UnnormalizeKeypoints(Vector2d& Keypoints, int FrameWidth, int FrameHeight) {
+
+    Vector2d keypoints = Keypoints;
+
+    int numJoints = Keypoints.size();
+    int dim2d = Keypoints[0].size();
+
+    for (int i=0; i < numJoints; i++) {
+
+        keypoints[i][0] = (keypoints[i][0] + 1.0)*0.5*FrameWidth;
+        keypoints[i][1] = (keypoints[i][1] + 1.0*FrameHeight/FrameWidth)*0.5*FrameWidth;
+
+    }
+
+    return keypoints;
+
+}
+
+Vector2d NormalizeKeypoints3d(Vector2d& Keypoints, int FrameWidth, int FrameHeight) {
+
+    Vector2d keypoints = Keypoints;
+
+    int numJoints = Keypoints.size();
+    for (int i=0; i < numJoints; i++) {
+
+        keypoints[i][0] = 2.0*keypoints[i][0]/FrameWidth - 1.0;
+        keypoints[i][1] = 2.0*keypoints[i][1]/FrameWidth - 1.0*FrameHeight/FrameWidth;
+        keypoints[i][2] = 2.0*keypoints[i][2]/FrameWidth - 1.0;
+
+    }
+
+    return keypoints;
+
+}
+
+Vector2d UnnormalizeKeypoints3d(Vector2d& Keypoints, int FrameWidth, int FrameHeight) {
+
+    Vector2d keypoints = Keypoints;
+
+    int numJoints = Keypoints.size();
+    for (int i=0; i < numJoints; i++) {
+
+        keypoints[i][0] = (keypoints[i][0] + 1.0)*0.5*FrameWidth;
+        keypoints[i][1] = (keypoints[i][1] + 1.0*FrameHeight/FrameWidth)*0.5*FrameWidth;
+        keypoints[i][2] = (keypoints[i][2] + 1.0)*0.5*FrameWidth;
+
+    }
+
+    return keypoints;
+
+}
+
+vector<float> InterpVec1d(vector<float>& InputVec, int OutputSize) {
+
+    int inputSize = InputVec.size();
+    std::vector<float> outputVec(OutputSize);
+
+    for (int i = 0; i < OutputSize; ++i) {
+
+        float index = static_cast<float>(i * (inputSize - 1)) / static_cast<float>(OutputSize - 1);
+        int index_int = static_cast<int>(index);
+        float t = index - index_int;
+
+        outputVec[i] = (1.0f - t) * InputVec[index_int] + t * InputVec[std::min(index_int + 1, inputSize - 1)];
+    }
+
+    return outputVec;
+}
+
+Vector2d InterpInputVec(Vector2d& InputVec, int NumFramesOut) {
+
+
+
+}
+
+
+Vector4d ConvertKeypointsToInputVec(Vector2d& Keypoints, int BatchSize, int NumFrames) {
+
+    Vector2d keypoints = Keypoints;
+
+    int numJoints = Keypoints.size();
+    int dim2d = Keypoints[0].size();
+
+    Vector4d inputVec = InitVec4d(BatchSize, NumFrames, numJoints, dim2d);
+
+    for (int ib=0; ib < BatchSize; ib++) {
+        for (int i=0; i < NumFrames; i++) {
+            for (int j=0; j < numJoints; j++) {
+                for (int k=0; k < dim2d; k++) {
+                    inputVec[ib][i][j][k] = Keypoints[j][k];
+                }
+            }
+        }
+    }
+
+    return inputVec;
+
+}
+
+
+
 Vector4d CreateMockInputVec(int BatchSize, int NumFrames, int NumJoints, int Dim2d) {
 
     Vector2d keypoints = GetMockKeypoints();
@@ -184,7 +304,7 @@ torch::Tensor CreateInputTensor(Vector4d& InputVec) {
 
 }
 
-Vector2d GetPoseOut(at::Tensor& Outputs) {
+Vector2d GetPoseFromOutputTensor(torch::Tensor& Outputs) {
 
     int numJoints = Outputs.size(2);
     int dims = 3;
@@ -213,6 +333,60 @@ void GetPoseMinMax(float& Min, float& Max, Vector2d& PoseIn, int Direct) {
     Min = *it.first;
     Max = *it.second;
  
+}
+
+Vector2d RescalePose2d(Vector2d& PoseIn, int FrameWidth, int FrameHeight) {
+
+    Vector2d pose = PoseIn;
+
+    int numJoints = pose.size();
+    int dims = pose[0].size();
+
+    float xMin, xMax;
+    float yMin, yMax;
+
+    // Bounds of pose 2d
+    GetPoseMinMax(xMin, xMax, pose, 0);
+    GetPoseMinMax(yMin, yMax, pose, 1);
+
+    float humanWidth = abs(xMax - xMin);
+    float humanHeight = abs(yMax - yMin);
+
+    float resizeFactor = 0.8;
+    float errTol = 1.0e-8;
+    float xRatio, yRatio, targetRatio;
+
+    if (humanWidth > errTol && humanHeight > errTol) {
+
+        xRatio = 1.0 * FrameWidth / humanWidth;
+        yRatio = 1.0 * FrameHeight / humanHeight;
+        targetRatio = resizeFactor*min(xRatio, yRatio);
+
+        for (int i=0; i < numJoints; i++) {
+            for (int d=0; d < dims; d++) {
+                pose[i][d] *= targetRatio;
+            }
+        }
+
+    } else {
+        return pose;
+    }
+
+    // Set the pelvis as center
+    float x0 = 0.5*FrameWidth;
+    float y0 = 0.5*FrameHeight;
+
+    vector<float> pelvis = pose[0];    
+    float xShift = x0 - pelvis[0]; 
+    float yShift = y0 - pelvis[1]; 
+
+    for (int i=0; i < numJoints; i++) {
+        pose[i][0] += xShift;
+        pose[i][1] += yShift;
+    }
+
+    return pose;
+
 }
 
 Vector2d RescalePose3d(Vector2d& Pose3d, Vector2d& Pose2d) {

@@ -140,6 +140,7 @@ def get_pose3D(video_path, output_dir, debug=False):
 
         ret, img = cap.read()
         img_size = img.shape
+        print(f"img_size: {img_size}")
        
         skel_2d_rescale = keypoints_rescale[0][i]
 
