@@ -8,11 +8,13 @@ using namespace std;
 
 class MHFormer
 {
+
 public:
     
-    MHFormer(int FrameWidth, int FrameHeight);
+    MHFormer();
     ~MHFormer();
 
+    void Init(int FrameWidth, int FrameHeight);
     void UseGpu(bool bFlag);
     bool LoadModel(string ModelPath);
 

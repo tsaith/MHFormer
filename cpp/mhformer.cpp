@@ -1,16 +1,18 @@
 #include "mhformer.h"
 
 
-MHFormer::MHFormer(int FrameWidth, int FrameHeight) {
-
-	mFrameWidth = FrameWidth;
-	mFrameHeight = FrameHeight;
-
+MHFormer::MHFormer() {
 }
 
 MHFormer::~MHFormer() {
 }
 
+void MHFormer::Init(int FrameWidth, int FrameHeight) {
+
+	mFrameWidth = FrameWidth;
+	mFrameHeight = FrameHeight;
+
+}
 
 void MHFormer::UseGpu(bool bFlag) {
 
@@ -26,7 +28,6 @@ void MHFormer::UseGpu(bool bFlag) {
 
 bool MHFormer::LoadModel(string ModelPath) {
 
-
     bool bStatus = true;
     try {
         mModel = torch::jit::load(ModelPath);
@@ -41,8 +42,6 @@ bool MHFormer::LoadModel(string ModelPath) {
 
 }
 
-
-
 vector<vector<float>> MHFormer::Predict(vector<vector<float>>& Keypoints) {
 
     Vector2d pose2dPixel = Keypoints;
@@ -54,15 +53,12 @@ vector<vector<float>> MHFormer::Predict(vector<vector<float>>& Keypoints) {
         mTemporalData.erase(mTemporalData.begin());
     }
 
-    //Vector2d pose2dPixel = GetMockKeypoints();
-
     Vector4d inputVec = CreateInputVec(mTemporalData, mBatchSize, mNumFramesModel);
     torch::Tensor inputTensor = CreateInputTensor(inputVec);
 
     // Inference
     torch::Tensor outputTensor = Infer(inputTensor);
-
-    Vector2d pose3d = GetPoseFromOutputTensor(outputTensor);
+    Vector2d pose3d = ConvertOutputTensorToPose3d(outputTensor);
 
     Vector2d pose3dPixel = UnnormalizeKeypoints3d(pose3d, mFrameWidth, mFrameHeight);
     pose3dPixel = RescalePose3d(pose3dPixel, pose2dPixel);

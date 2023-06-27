@@ -239,7 +239,7 @@ torch::Tensor CreateInputTensor(Vector4d& InputVec) {
 
 }
 
-Vector2d GetPoseFromOutputTensor(torch::Tensor& Outputs) {
+Vector2d ConvertOutputTensorToPose3d(torch::Tensor& Outputs) {
 
     int numJoints = Outputs.size(2);
     int dims = 3;

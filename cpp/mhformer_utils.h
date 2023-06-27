@@ -33,7 +33,7 @@ Vector4d ConvertKeypointsToInputVec(Vector2d& Keypoints, int BatchSize, int NumF
 Vector4d CreateInputVec(Vector3d& TemporalData, int BatchSize, int NumFrames);
 torch::Tensor CreateInputTensor(Vector4d& InputVec);
 
-Vector2d GetPoseFromOutputTensor(torch::Tensor& Outputs);
+Vector2d ConvertOutputTensorToPose3d(torch::Tensor& Outputs);
 
 void GetPoseMinMax(float& Min, float& Max, Vector2d& PoseIn, int Direct);
 Vector2d RescalePose2d(Vector2d& PoseIn, int FrameWidth, int FrameHeight);

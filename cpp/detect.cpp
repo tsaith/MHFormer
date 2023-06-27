@@ -15,6 +15,7 @@
 using namespace std;
 using namespace cv;
 
+
 int main() {
 
     string msg;
@@ -24,20 +25,12 @@ int main() {
     int frameWidth = 1280;
     int frameHeight = 720;
     
-    string modelPath = "../../checkpoint/pretrained/torchscript_model_traced.pth";
- 
-    /*
-    const int batchSize= 1;
-    const int numFramesModel= 81;
-    const int numJoints = 17;
-    const int dim2d = 2;
-    const int dim3d = 3;
-    */
-
-
     const int videoLength = 15;
+    string modelPath = "../../checkpoint/pretrained/torchscript_model_traced.pth";
 
-    MHFormer mhformer = MHFormer(frameWidth, frameHeight);
+    // Declare MHFormer 
+    MHFormer mhformer;
+    mhformer.Init(frameWidth, frameHeight);
     mhformer.UseGpu(false);
     mhformer.LoadModel(modelPath);
 
