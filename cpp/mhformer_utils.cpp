@@ -1,116 +1,33 @@
-#include "libdetect.h"
+#include "mhformer_utils.h"
+
 
 Vector2d GetMockKeypoints() {
 
     Vector2d keypoints {
 
-        { 0.0000,  0.0000},
-        {-0.0542, -0.0163},
-        {-0.0651,  0.2169},
-        {-0.2169,  0.2602},
-        { 0.0542,  0.0163},
-        { 0.0271,  0.2819},
-        { 0.0325,  0.5259},
-        { 0.0352, -0.1355},
-        { 0.0054, -0.2801},
-        {-0.0217, -0.3199},
-        {-0.0258, -0.3741},
-        { 0.1193, -0.2711},
-        { 0.2060, -0.1681},
-        { 0.1084, -0.1030},
-        {-0.0651, -0.2711},
-        {-0.1572, -0.2006},
-        {-0.0651, -0.1030}
+        {640.0000, 360.0000},
+        {605.3012, 349.5903},
+        {598.3614, 498.7952},
+        {501.2048, 526.5542},
+        {674.6988, 370.4096},
+        {657.3494, 540.4338},
+        {660.8193, 696.5783},
+        {662.5542, 273.2530},
+        {643.4699, 180.7229},
+        {626.1205, 155.2771},
+        {623.5180, 120.5783},
+        {716.3374, 186.5060},
+        {771.8554, 252.4337},
+        {709.3976, 294.0723},
+        {598.3614, 186.5060},
+        {539.3735, 231.6144},
+        {598.3614, 294.0723}
 
     };
 
     return keypoints;
 
 }
-
-Vector2d GetMockKeypointsFlip() {
-
-    Vector2d keypoints {
-    
-        {-0.0000,  0.0000}, 
-        {-0.0542,  0.0163},                                                                                              
-        {-0.0271,  0.2819},
-        {-0.0325,  0.5259},
-        { 0.0542, -0.0163},
-        { 0.0651,  0.2169},
-        { 0.2169,  0.2602},
-        {-0.0352, -0.1355},
-        {-0.0054, -0.2801},
-        { 0.0217, -0.3199},
-        { 0.0258, -0.3741},
-        { 0.0651, -0.2711},
-        { 0.1572, -0.2006},
-        { 0.0651, -0.1030},
-        {-0.1193, -0.2711},
-        {-0.2060, -0.1681},
-        {-0.1084, -0.1030}
-
-    };
-
-    return keypoints;
-
-}
-
-Vector2d GetMockOutputs() {
-    
-    Vector2d outputs {
-
-        {-2.6163e-04,  3.5916e-06,  2.4172e-04},
-        {-9.6760e-02, -2.6799e-02,  7.6925e-02},
-        {-1.3421e-01,  3.2777e-01,  1.9386e-01},
-        { 9.6760e-02,  2.6845e-02, -7.6880e-02},
-        { 2.5307e-02,  4.5648e-01, -9.2942e-02},
-        { 1.2370e-01,  8.6109e-01,  5.3697e-02},
-        { 5.4214e-02, -2.4407e-01, -5.9054e-02},
-        { 3.0803e-02, -4.7703e-01, -1.6575e-01},
-        {-2.0972e-02, -5.6478e-01, -2.3580e-01},
-        {-3.8528e-02, -6.6981e-01, -1.9677e-01},
-        { 1.9380e-01, -4.2013e-01, -2.1035e-01},
-        { 4.1497e-01, -2.3785e-01, -2.4411e-01},
-        { 2.1095e-01, -2.3227e-01, -3.1787e-01},
-        {-1.2163e-01, -4.6578e-01, -6.3605e-02},
-        {-3.2557e-01, -3.2365e-01, -2.3023e-02},
-        {-2.8519e-01, -1.4468e-01, -1.6588e-01}
-
-    };
-
-    return outputs;
-
-}
-
-Vector2d GetMockOutputsFlip() {
-    
-    Vector2d outputs {
-
-        {-1.4440e-04,  2.4511e-04,  1.1604e-04},
-        {-9.9115e-02,  3.7352e-02, -7.5168e-02},
-        { 8.5948e-03,  4.3601e-01, -1.4788e-01},
-        {-9.8936e-02,  8.5636e-01, -6.3626e-02},
-        { 9.9062e-02, -3.7373e-02,  7.5215e-02},
-        { 1.6354e-01,  3.3519e-01,  1.1755e-01},
-        { 1.9216e-01,  5.4643e-01,  4.8009e-01},
-        {-4.4273e-02, -2.4942e-01, -6.7804e-02},
-        {-1.3177e-02, -4.7792e-01, -1.8374e-01},
-        { 3.4882e-02, -5.5918e-01, -2.5274e-01},
-        { 4.6720e-02, -6.6495e-01, -2.2541e-01},
-        { 1.3001e-01, -4.6374e-01, -7.0558e-02},
-        { 3.4332e-01, -3.5235e-01,  1.0831e-01},
-        { 3.1033e-01, -1.4761e-01,  3.5555e-02},
-        {-1.8859e-01, -4.1598e-01, -2.2971e-01},
-        {-3.9814e-01, -2.3935e-01, -2.4810e-01},
-        {-1.8398e-01, -2.4943e-01, -3.3361e-01}
-
-    };
-
-    return outputs;
-
-}
-
 
 Vector2d InitVec2d(int Rows, int Cols){
     Vector2d vec2d(Rows, vector<float>(Cols, 0.0));
@@ -227,7 +144,7 @@ vector<float> InterpVec1d(vector<float>& InputVec, int OutputSize) {
     return outputVec;
 }
 
-Vector2d InterpInputVec(Vector2d& InputVec, int NumFramesOut) {
+void InterpInputVec(Vector2d& InputVec, int NumFramesOut) {
 
 
 
@@ -257,18 +174,38 @@ Vector4d ConvertKeypointsToInputVec(Vector2d& Keypoints, int BatchSize, int NumF
 
 }
 
+Vector4d CreateInputVec(Vector3d& TemporalData, int BatchSize, int NumFramesOut) {
 
+    int numFramesIn = TemporalData.size();
+    int numJoints = TemporalData[0].size();
+    int dim2d = TemporalData[0][0].size();
 
-Vector4d CreateMockInputVec(int BatchSize, int NumFrames, int NumJoints, int Dim2d) {
+    Vector4d inputVec = InitVec4d(BatchSize, NumFramesOut, numJoints, dim2d);
 
-    Vector2d keypoints = GetMockKeypoints();
-    Vector4d inputVec = InitVec4d(BatchSize, NumFrames, NumJoints, Dim2d);
+    Vector3d data = InitVec3d(numJoints, dim2d, numFramesIn);
+    Vector3d dataInterp = InitVec3d(numJoints, dim2d, NumFramesOut);
 
+    // Prepare data for interpolation
+    for (int i=0; i < numFramesIn; i++) {
+        for (int j=0; j < numJoints; j++) {
+            for (int k=0; k < dim2d; k++) {
+                data[j][k][i] = TemporalData[i][j][k];
+            }
+        }
+    }
+
+    for (int j=0; j < numJoints; j++) {
+        for (int k=0; k < dim2d; k++) {
+            dataInterp[j][k] = InterpVec1d(data[j][k], NumFramesOut);
+        }
+    }
+
+    // Input vector
     for (int ib=0; ib < BatchSize; ib++) {
-        for (int i=0; i < NumFrames; i++) {
-            for (int j=0; j < NumJoints; j++) {
-                for (int k=0; k < Dim2d; k++) {
-                    inputVec[ib][i][j][k] = keypoints[j][k];
+        for (int i=0; i < NumFramesOut; i++) {
+            for (int j=0; j < numJoints; j++) {
+                for (int k=0; k < dim2d; k++) {
+                    inputVec[ib][i][j][k] = dataInterp[j][k][i];
                 }
             }
         }
@@ -285,8 +222,6 @@ torch::Tensor CreateInputTensor(Vector4d& InputVec) {
     int numJoints = InputVec[0][0].size();
     int dim2d = InputVec[0][0][0].size();
 
-
-    //torch::Tensor inputTensor = torch::from_blob(InputVec.data(), {batchSize, numFrames, numJoints, dim2d});
     torch::Tensor inputTensor = torch::zeros({batchSize, numFrames, numJoints, dim2d},
         torch::kFloat);
 
@@ -425,11 +360,18 @@ Vector2d RescalePose3d(Vector2d& Pose3d, Vector2d& Pose2d) {
         pose3d[i][2] *= ratioX;
     }
 
-    // Shift the pelvis
-    vector<float> pelvis = pose3d[0];
+    // Shift pelvis to the original point
+    vector<float> pelvisPose2d = Pose2d[0];
+    vector<float> pelvisPose3d = pose3d[0];
+    vector<float> shift3d = {
+        -pelvisPose3d[0],
+        -pelvisPose3d[1], 
+        -pelvisPose3d[2],
+    };
+
     for (int i=0; i < numJoints; i++) {
         for (int j=0; j < dims; j++) {
-            pose3d[i][j] -= pelvis[j];
+            pose3d[i][j] += shift3d[j];
         }
     }
 
@@ -453,8 +395,6 @@ Vector2d ToPixelSpace(Vector2d& PoseIn, int Width, int Height) {
     return pose;
 
 }
-
-
 
 void PrintPoint(string Msg, vector<float> &Point, int Dims) {
 

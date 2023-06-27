@@ -144,6 +144,9 @@ def get_pose3D(video_path, output_dir, debug=False):
        
         skel_2d_rescale = keypoints_rescale[0][i]
 
+        if i == i_diag:
+            print(f"skel_2d_rescale: {skel_2d_rescale}")
+
         input_2D_no = skel_2d_rescale
         input_2D_no = np.tile(input_2D_no, (1, 1, 1))
 

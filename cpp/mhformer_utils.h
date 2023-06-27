@@ -18,9 +18,6 @@ typedef vector<Vector2d> Vector3d;
 typedef vector<Vector3d> Vector4d;
 
 Vector2d GetMockKeypoints();
-Vector2d GetMockKeypointsFlip();
-Vector2d GetMockOutputs();
-Vector2d GetMockOutputsFlip();
 Vector2d InitVec2d(int Rows, int Cols);
 Vector3d InitVec3d(int Nt, int Rows, int Cols);
 Vector4d InitVec4d(int BatchSize, int Nt, int Rows, int Cols);
@@ -30,11 +27,10 @@ Vector2d UnnormalizeKeypoints(Vector2d& Keypoints, int FrameWidth, int FrameHeig
 Vector2d NormalizeKeypoints3d(Vector2d& Keypoints, int FrameWidth, int FrameHeight);
 Vector2d UnnormalizeKeypoints3d(Vector2d& Keypoints, int FrameWidth, int FrameHeight);
 
-
 vector<float> InterpVec1d(vector<float>& InputVec, int OutputSize);
 
 Vector4d ConvertKeypointsToInputVec(Vector2d& Keypoints, int BatchSize, int NumFrames);
-Vector4d CreateMockInputVec(int BatchSize, int NumFrames, int NumJoints, int Dim2d);
+Vector4d CreateInputVec(Vector3d& TemporalData, int BatchSize, int NumFrames);
 torch::Tensor CreateInputTensor(Vector4d& InputVec);
 
 Vector2d GetPoseFromOutputTensor(torch::Tensor& Outputs);

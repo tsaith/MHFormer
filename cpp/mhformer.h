@@ -1,6 +1,6 @@
 #pragma once
 
-#include "libdetect.h"
+#include "mhformer_utils.h"
 
 using namespace cv;
 using namespace std;
@@ -17,14 +17,16 @@ public:
     bool LoadModel(string ModelPath);
 
     vector<vector<float>> Predict(vector<vector<float>>& Keypoints);
+    torch::Tensor Infer(torch::Tensor& Inputs);
 
 private:
 
-    int mFrameWidth = 0;
-    int mFrameHeight = 0;
+    int mFrameWidth = 640;
+    int mFrameHeight = 480;
 
     bool mUseGpu = false;
-    torch::Device mDevice = torch::Device("cuda");
+    torch::Device mDevice = torch::Device("cpu");
+    //torch::Device mDevice = torch::Device("cuda");
     const c10::ScalarType mPrecision = torch::kFloat32;
     //const c10::ScalarType mPrecision = torch::kFloat16;
 
@@ -37,13 +39,8 @@ private:
     const int mDim2d = 2;
     const int mDim3d = 3;
 
-    Vector2d mKeypoints;
-    Vector4d mDataVec;
+    Vector3d mTemporalData;
     Vector4d mInputVec;
-    torch::Tensor mInputTensor;
-
-
-    Vector2d mKeypoints3d;
 
 };
 
