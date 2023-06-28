@@ -1,5 +1,9 @@
 #pragma once
 
+#include "mhformer.h"
+#include <stdio.h>
+
+using namespace std;
 
 #ifdef MHFORMER_EXPORTS
 
@@ -19,9 +23,12 @@
 
 #endif
 
+
 extern "C" {
 
-    DLL_API int MHFormerInit(int Width, int Height);
+    DLL_API void MHFormerInit(int Width, int Height);
     DLL_API void MHFormerFinalize(void);
+    DLL_API void MHFormerLoadModel(char* ModelPathIn);
+    DLL_API float* MHFormerPredict(float* KeypointsIn);
 
 }
