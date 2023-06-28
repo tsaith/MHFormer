@@ -9,6 +9,7 @@
 #include <torch/script.h>
 
 #include "mhformer.h"
+#include "mhformer_proxy.h"
 #include "mhformer_utils.h"
 #include "libplot.h"
 
@@ -26,13 +27,22 @@ int main() {
     int frameHeight = 720;
     
     const int videoLength = 15;
+    string libPath = "../libs/libmhformer.so";
     string modelPath = "../../checkpoint/pretrained/torchscript_model_traced.pth";
 
-    // Declare MHFormer 
+    // Declare MHFormer
+    MHFormerProxy mhformer;
+    mhformer.LoadLibrary(libPath);
+    mhformer.Init(frameWidth, frameHeight);
+    mhformer.UseGpu(false);
+    mhformer.LoadModel(modelPath);
+
+    /*
     MHFormer mhformer;
     mhformer.Init(frameWidth, frameHeight);
     mhformer.UseGpu(false);
     mhformer.LoadModel(modelPath);
+    */
 
     Vector2d pose2dPixel;
     Vector2d pose3dPixel;

@@ -27,8 +27,9 @@ using namespace std;
 extern "C" {
 
     DLL_API void MHFormerInit(int Width, int Height);
-    DLL_API void MHFormerFinalize(void);
-    DLL_API void MHFormerLoadModel(char* ModelPathIn);
-    DLL_API float* MHFormerPredict(float* KeypointsIn);
+    DLL_API void MHFormerFinalize();
+    DLL_API void MHFormerUseGpu(bool bFlag);
+    DLL_API void MHFormerLoadModel(char* ModelPath);
+    DLL_API float* MHFormerPredict(float* pKeypoints);
 
 }
