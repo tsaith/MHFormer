@@ -1,3 +1,5 @@
+#include <torch/script.h>
+
 #include <stdio.h>
 #include <iostream>
 #include <string>
@@ -6,12 +8,11 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include <torch/script.h>
 
-#include "mhformer.h"
 #include "mhformer_proxy.h"
 #include "mhformer_utils.h"
 #include "libplot.h"
+#include "timer.hpp"
 
 using namespace std;
 using namespace cv;
@@ -27,14 +28,18 @@ int main() {
     int frameHeight = 720;
     
     const int videoLength = 15;
-    string libPath = "../libs/libmhformer.so";
+    string libPath = "../../libs/libmhformer.so";
     string modelPath = "../../checkpoint/pretrained/torchscript_model_traced.pth";
+
+    // Timer
+    Timer timer;
 
     // Declare MHFormer
     MHFormerProxy mhformer;
     mhformer.LoadLibrary(libPath);
     mhformer.Init(frameWidth, frameHeight);
     mhformer.UseGpu(false);
+    //mhformer.UseGpu(true);
     mhformer.LoadModel(modelPath);
 
     /*
@@ -46,19 +51,29 @@ int main() {
 
     Vector2d pose2dPixel;
     Vector2d pose3dPixel;
-    for (int i=0; i < videoLength; i++) {
 
+    // Warm-up of inference
+    for (int i=0; i < 3; i++) {
         pose2dPixel = GetMockKeypoints();
         pose3dPixel = mhformer.Predict(pose2dPixel);
-
     }
 
-    //cout << "pose3dPixel[0]: " << pose3dPixel[0] << endl;
+    timer.tic();
+    for (int i=0; i < videoLength; i++) {
+        pose2dPixel = GetMockKeypoints();
+        pose3dPixel = mhformer.Predict(pose2dPixel);
+    }
+    timer.toc();
+
+    float timeCostTot = timer.GetDt();
+    float timeCost = timeCostTot / videoLength;
+    cout << "time cost of prediction is " << timeCost << " sec." << endl;
+
+    // Cross-section
     Vector2d poseXY = GetPoseCrossSection(pose3dPixel, "x-y");
     Vector2d poseZY = GetPoseCrossSection(pose3dPixel, "z-y");
-    //cout << "poseXY: " << poseXY << endl;
-    //cout << "poseZY: " << poseZY << endl;
 
+    // Make plots
     cv::Mat frontView = cv::Mat(frameHeight, frameWidth, CV_8UC3, cv::Scalar(255, 255, 255));
     cv::Mat sideView = cv::Mat(frameHeight, frameWidth, CV_8UC3, cv::Scalar(255, 255, 255));
     cv::Mat pose2dView = cv::Mat(frameHeight, frameWidth, CV_8UC3, cv::Scalar(255, 255, 255));
