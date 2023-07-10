@@ -178,8 +178,8 @@ def get_pose3D(video_path, output_dir, debug=False):
         else:
             input_2D = torch.from_numpy(input_2D.astype('float32')).cpu()
 
-        #N = input_2D.size(0)
-        
+        #print("input_2D[:, 0].shape: {}", input_2D[:, 0].shape)        
+        #print("input_2D[:, 0].dtype: {}", input_2D[:, 0].dtype)        
         if export_torchscript_model:
             traced_script_module = torch.jit.trace(model, input_2D[:, 0])
             traced_script_module.save(model_traced_filepath)
