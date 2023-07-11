@@ -45,6 +45,9 @@ bool MHFormer::LoadModel(string ModelPath) {
 vector<vector<float>> MHFormer::Predict(vector<vector<float>>& Keypoints) {
 
     Vector2d pose2dPixel = Keypoints;
+    pose2dPixel = ShiftAndRescaleKeypoints(pose2dPixel, mFrameWidth, mFrameHeight);
+
+    // Normalize keypoints 2d
     Vector2d pose2d = NormalizeKeypoints(pose2dPixel, mFrameWidth, mFrameHeight);
 
     // Update temporal data
@@ -60,8 +63,21 @@ vector<vector<float>> MHFormer::Predict(vector<vector<float>>& Keypoints) {
     torch::Tensor outputTensor = Infer(inputTensor);
     Vector2d pose3d = ConvertOutputTensorToPose3d(outputTensor);
 
+    // Rotate pose around x-axis
+    pose3d = RotatePose3dAroundX(pose3d, mAngleAroundX);
+
+    // Unnormalize keypoints 3d
     Vector2d pose3dPixel = UnnormalizeKeypoints3d(pose3d, mFrameWidth, mFrameHeight);
-    pose3dPixel = RescalePose3d(pose3dPixel, pose2dPixel);
+
+    // Save unnormalized pose 3d
+    mPose3dPixelUnnorm = pose3dPixel;
+
+    // Rescale and rotate pose
+    pose3dPixel = RescaleAndShiftPose3d(pose3dPixel, pose2dPixel);
+
+    //float angleDeg = -10.0;
+    //pose3dPixel = RotatePose3dAroundX(pose3dPixel, angleDeg);
+
 
     return pose3dPixel;
 
@@ -76,4 +92,13 @@ torch::Tensor MHFormer::Infer(torch::Tensor& Inputs) {
 
     return outputs;
 
+}
+
+void MHFormer::SetAngleAroundX(float AngleDeg) {
+    mAngleAroundX = AngleDeg;
+}
+
+
+Vector2d MHFormer::GetPose3dPixelUnnorm() {
+    return mPose3dPixelUnnorm;
 }

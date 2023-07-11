@@ -21,6 +21,10 @@ public:
     vector<vector<float>> Predict(vector<vector<float>>& Keypoints);
     torch::Tensor Infer(torch::Tensor& Inputs);
 
+    void SetAngleAroundX(float AngleDeg);
+    Vector2d GetPose3dPixelUnnorm();
+
+
 private:
 
     int mFrameWidth = 640;
@@ -43,6 +47,11 @@ private:
 
     Vector3d mTemporalData;
     Vector4d mInputVec;
+
+    Vector2d mPose3dPixelUnnorm;
+    
+    // Rotational angle around x-axis
+    float mAngleAroundX = -10.0;
 
 };
 

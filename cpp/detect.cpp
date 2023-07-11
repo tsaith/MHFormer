@@ -38,8 +38,8 @@ int main() {
     MHFormerProxy mhformer;
     mhformer.LoadLibrary(libPath);
     mhformer.Init(frameWidth, frameHeight);
-    mhformer.UseGpu(false);
-    //mhformer.UseGpu(true);
+    //mhformer.UseGpu(false);
+    mhformer.UseGpu(true);
     mhformer.LoadModel(modelPath);
 
     /*
@@ -79,18 +79,13 @@ int main() {
     cv::Mat pose2dView = cv::Mat(frameHeight, frameWidth, CV_8UC3, cv::Scalar(255, 255, 255));
     cv::Mat pose2dNormView = cv::Mat(frameHeight, frameWidth, CV_8UC3, cv::Scalar(255, 255, 255));
 
-    int shiftX, shiftY, shiftZ;
-    shiftX = 0.5*frameWidth;
-    shiftY = 0.5*frameHeight;
-    shiftZ = 0.5*frameWidth;
-
-    PlotPose2dWithShift(pose2dView, pose2dPixel, 0, 0);
+    PlotPose2d(pose2dView, pose2dPixel);
     cv::imshow("pose2dView", pose2dView);
 
-    PlotPose2dWithShift(frontView, poseXY, shiftX, shiftY);
+    PlotPose2d(frontView, poseXY);
     cv::imshow("frontView", frontView);
 
-    PlotPose2dWithShift(sideView, poseZY, shiftZ, shiftY);
+    PlotPose2d(sideView, poseZY);
     cv::imshow("sideView", sideView);
 
     int keyCode = cv::waitKey(0);

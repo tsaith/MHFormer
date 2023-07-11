@@ -1,11 +1,14 @@
 #include "libmhformer.h"
   
+
 MHFormer* pInst = NULL;
 
 const int NumJoints = 17;
+const int Dim2d = 2;
 const int Dim3d = 3;
 
 float Pose3dArray[NumJoints][Dim3d];
+float Pose3dPixelUnnormArray[NumJoints][Dim3d];
 
 void MHFormerInit(int Width, int Height) {
 
@@ -57,6 +60,27 @@ float* MHFormerPredict(float* pKeypoints) {
     }
 
     float* pPose3d = &Pose3dArray[0][0];
+
+    return pPose3d;
+
+}
+
+void MHFormerSetAngleAroundX(float AngleDeg) {
+    pInst->SetAngleAroundX(AngleDeg);
+}
+
+float* MHFormerGetPose3dPixelUnnorm() {
+
+    vector<vector<float>> pose3d;
+    pose3d = pInst->GetPose3dPixelUnnorm();
+
+    for (int i=0; i < NumJoints; i++) {
+        for (int j=0; j < Dim3d; j++) {
+            Pose3dPixelUnnormArray[i][j] = pose3d[i][j];
+        }
+    }
+
+    float* pPose3d = &Pose3dPixelUnnormArray[0][0];
 
     return pPose3d;
 

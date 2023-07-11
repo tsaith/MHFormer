@@ -31,5 +31,7 @@ extern "C" {
     DLL_API void MHFormerUseGpu(bool bFlag);
     DLL_API void MHFormerLoadModel(char* ModelPath);
     DLL_API float* MHFormerPredict(float* pKeypoints);
+    DLL_API void MHFormerSetAngleAroundX(float AngleDeg);
+    DLL_API float* MHFormerGetPose3dPixelUnnorm();
 
 }
