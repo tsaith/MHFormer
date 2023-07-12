@@ -9,7 +9,8 @@
 #include <opencv2/highgui/highgui.hpp>
 
 
-#include "mhformer_proxy.h"
+//#include "mhformer_proxy.h"
+#include "mhformer.h"
 #include "mhformer_utils.h"
 #include "libplot.h"
 #include "timer.hpp"
@@ -35,8 +36,9 @@ int main() {
     Timer timer;
 
     // Declare MHFormer
-    MHFormerProxy mhformer;
-    mhformer.LoadLibrary(libPath);
+    MHFormer mhformer;
+    //MHFormerProxy mhformer;
+    //mhformer.LoadLibrary(libPath);
     mhformer.Init(frameWidth, frameHeight);
     //mhformer.UseGpu(false);
     mhformer.UseGpu(true);

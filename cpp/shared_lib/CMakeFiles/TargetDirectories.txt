@@ -1,0 +1,3 @@
+/home/andrew/projects/MHFormer/cpp/shared_lib/CMakeFiles/rebuild_cache.dir
+/home/andrew/projects/MHFormer/cpp/shared_lib/CMakeFiles/edit_cache.dir
+/home/andrew/projects/MHFormer/cpp/shared_lib/CMakeFiles/detect.dir

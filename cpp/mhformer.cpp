@@ -45,7 +45,7 @@ bool MHFormer::LoadModel(string ModelPath) {
 vector<vector<float>> MHFormer::Predict(vector<vector<float>>& Keypoints) {
 
     Vector2d pose2dPixel = Keypoints;
-    pose2dPixel = ShiftAndRescaleKeypoints(pose2dPixel, mFrameWidth, mFrameHeight);
+    pose2dPixel = RescaleAndShiftPose2d(pose2dPixel, mFrameWidth, mFrameHeight);
 
     // Normalize keypoints 2d
     Vector2d pose2d = NormalizeKeypoints(pose2dPixel, mFrameWidth, mFrameHeight);
