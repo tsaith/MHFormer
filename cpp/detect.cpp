@@ -9,9 +9,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 
-//#include "mhformer_proxy.h"
 #include "mhformer.h"
-#include "mhformer_utils.h"
 #include "libplot.h"
 #include "timer.hpp"
 
@@ -23,10 +21,10 @@ int main() {
 
     string msg;
 
-    //int frameWidth = 640;
-    //int frameHeight = 480;
     int frameWidth = 1280;
     int frameHeight = 720;
+    //int frameWidth = 640;
+    //int frameHeight = 480;
     
     const int videoLength = 15;
     string libPath = "../../libs/libmhformer.so";
@@ -35,21 +33,10 @@ int main() {
     // Timer
     Timer timer;
 
-    // Declare MHFormer
-    MHFormer mhformer;
-    //MHFormerProxy mhformer;
-    //mhformer.LoadLibrary(libPath);
-    mhformer.Init(frameWidth, frameHeight);
-    //mhformer.UseGpu(false);
-    mhformer.UseGpu(true);
-    mhformer.LoadModel(modelPath);
-
-    /*
     MHFormer mhformer;
     mhformer.Init(frameWidth, frameHeight);
     mhformer.UseGpu(false);
     mhformer.LoadModel(modelPath);
-    */
 
     Vector2d pose2dPixel;
     Vector2d pose3dPixel;

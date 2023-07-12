@@ -42,13 +42,14 @@ bool MHFormer::LoadModel(string ModelPath) {
 
 }
 
-vector<vector<float>> MHFormer::Predict(vector<vector<float>>& Keypoints) {
+vector<vector<float>> MHFormer::Predict(vector<vector<float>>& Pose2d) {
 
-    Vector2d pose2dPixel = Keypoints;
+
+    Vector2d pose2dPixel = Pose2d;
     pose2dPixel = RescaleAndShiftPose2d(pose2dPixel, mFrameWidth, mFrameHeight);
 
     // Normalize keypoints 2d
-    Vector2d pose2d = NormalizeKeypoints(pose2dPixel, mFrameWidth, mFrameHeight);
+    Vector2d pose2d = NormalizeKeypoints2d(pose2dPixel, mFrameWidth, mFrameHeight);
 
     // Update temporal data
     mTemporalData.push_back(pose2d);
@@ -73,11 +74,8 @@ vector<vector<float>> MHFormer::Predict(vector<vector<float>>& Keypoints) {
     mPose3dPixelUnnorm = pose3dPixel;
 
     // Rescale and rotate pose
-    pose3dPixel = RescaleAndShiftPose3d(pose3dPixel, pose2dPixel);
-
-    //float angleDeg = -10.0;
-    //pose3dPixel = RotatePose3dAroundX(pose3dPixel, angleDeg);
-
+    pose3dPixel = RescaleAndShiftPose3d(pose3dPixel, Pose2d);
+    //pose3dPixel = RescaleAndShiftPose3d(pose3dPixel, pose2dPixel);
 
     return pose3dPixel;
 

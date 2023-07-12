@@ -18,7 +18,7 @@ public:
     void UseGpu(bool bFlag);
     bool LoadModel(string ModelPath);
 
-    vector<vector<float>> Predict(vector<vector<float>>& Keypoints);
+    vector<vector<float>> Predict(vector<vector<float>>& Pose2d);
     torch::Tensor Infer(torch::Tensor& Inputs);
 
     void SetAngleAroundX(float AngleDeg);
